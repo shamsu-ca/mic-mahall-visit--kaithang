@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>MIC MAHALL VISIT- Kaithang</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Anek+Malayalam:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+body {
+  margin: 0;
+  font-family: "Anek Malayalam", sans-serif;
+  background: #f2f2f2;
+  text-align: center;
+}
+
+.container {
+  padding: 15px;
+}
+
+canvas {
+  width: 100%;
+  max-width: 450px;
+  border-radius: 12px;
+  background: white;
+  touch-action: none;
+}
+
+.controls {
+  margin-top: 15px;
+}
+
+input, button {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+button {
+  background: #0a7cff;
+  color: white;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #005fd1;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>MIC MAHALL VISIT- Kaithang</h2>
+
+  <canvas id="canvas" width="2275" height="2560"></canvas>
+
+  <div class="controls">
+    <input type="file" id="upload" accept="image/*">
+    <input type="text" id="nameInput" placeholder="Type your name">
+    <button onclick="downloadImage()">Download Image</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+/* ===== TEXT SETTINGS (EDIT HERE ONLY) ===== */
+const TEXT_HEIGHT_FROM_BOTTOM = 300;
+const FONT_SIZE = 130;
+const TEXT_COLOR = "#000000";
+/* ========================================== */
+
+let userImage = null;
+let frameImage = new Image();
+let scale = 1;
+let posX = 0;
+let posY = 0;
+let isDragging = false;
+let startX, startY;
+
+/* Load Frame */
+frameImage.onload = () => drawCanvas();
+frameImage.src = "frame.png";
+
+/* Draw Everything */
+function drawCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 1. Draw User Image
+  if (userImage) {
+    const imgWidth = userImage.width * scale;
+    const imgHeight = userImage.height * scale;
+    ctx.drawImage(userImage, posX, posY, imgWidth, imgHeight);
+  }
+
+  // 2. Draw Frame Overlay
+  ctx.drawImage(frameImage, 0, 0, canvas.width, canvas.height);
+
+  // 3. Draw Text
+  const name = document.getElementById("nameInput").value;
+  ctx.fillStyle = TEXT_COLOR;
+  ctx.textAlign = "center";
+  ctx.font = `600 ${FONT_SIZE}px 'Anek Malayalam'`;
+  ctx.fillText(name, canvas.width / 2, canvas.height - TEXT_HEIGHT_FROM_BOTTOM);
+}
+
+/* Upload Image */
+document.getElementById("upload").addEventListener("change", function(e) {
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    const img = new Image();
+    img.onload = function() {
+      userImage = img;
+      scale = canvas.width / img.width;
+      posX = 0;
+      posY = 0;
+      drawCanvas();
+    };
+    img.src = event.target.result;
+  };
+  reader.readAsDataURL(e.target.files[0]);
+});
+
+/* Text Live Update */
+document.getElementById("nameInput").addEventListener("input", drawCanvas);
+
+/* Drag Move */
+canvas.addEventListener("mousedown", startDrag);
+canvas.addEventListener("mousemove", drag);
+canvas.addEventListener("mouseup", endDrag);
+canvas.addEventListener("touchstart", startDrag);
+canvas.addEventListener("touchmove", drag);
+canvas.addEventListener("touchend", endDrag);
+
+function startDrag(e) {
+  isDragging = true;
+  const touch = e.touches ? e.touches[0] : e;
+  startX = touch.clientX - posX;
+  startY = touch.clientY - posY;
+}
+
+function drag(e) {
+  if (!isDragging) return;
+  e.preventDefault();
+  const touch = e.touches ? e.touches[0] : e;
+  posX = touch.clientX - startX;
+  posY = touch.clientY - startY;
+  drawCanvas();
+}
+
+function endDrag() {
+  isDragging = false;
+}
+
+/* Pinch Zoom (Mouse Wheel & Touch Zoom Basic) */
+canvas.addEventListener("wheel", function(e) {
+  e.preventDefault();
+  scale += e.deltaY * -0.001;
+  scale = Math.min(Math.max(0.5, scale), 5);
+  drawCanvas();
+});
+
+/* Download */
+function downloadImage() {
+  const name = document.getElementById("nameInput").value || "campaign";
+  const link = document.createElement("a");
+  link.download = name + ".png";
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+}
+
+drawCanvas();
+</script>
+
+</body>
+</html>
