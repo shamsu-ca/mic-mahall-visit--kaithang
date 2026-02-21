@@ -2,173 +2,443 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-<title>MIC MAHALL VISIT- Kaithang</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MIC MAHALL VISIT - Kaithang</title>
 <link href="https://fonts.googleapis.com/css2?family=Anek+Malayalam:wght@400;600;700&display=swap" rel="stylesheet">
-
 <style>
-body {
-  margin: 0;
-  font-family: "Anek Malayalam", sans-serif;
-  background: #f2f2f2;
-  text-align: center;
-}
+  :root {
+    --primary: #0a7cff;
+    --primary-dark: #005fd1;
+    --bg-color: #f4f7f6;
+    --surface: #ffffff;
+    --text: #333;
+  }
 
-.container {
-  padding: 15px;
-}
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-canvas {
-  width: 100%;
-  max-width: 450px;
-  border-radius: 12px;
-  background: white;
-  touch-action: none;
-}
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: "Anek Malayalam", sans-serif;
+    background: var(--bg-color);
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile browsers */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Prevent pull-to-refresh */
+    touch-action: none; /* Stop browser gestures */
+  }
 
-.controls {
-  margin-top: 15px;
-}
+  /* Header */
+  header {
+    padding: 12px 16px;
+    background: var(--surface);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    z-index: 10;
+    text-align: center;
+  }
+  header h1 { margin: 0; font-size: 18px; color: var(--text); }
 
-input, button {
-  width: 100%;
-  padding: 12px;
-  margin: 8px 0;
-  font-size: 16px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-}
+  /* Canvas Container */
+  .canvas-container {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e0e0e0;
+    position: relative;
+    overflow: hidden;
+  }
 
-button {
-  background: #0a7cff;
-  color: white;
-  border: none;
-  font-weight: bold;
-  cursor: pointer;
-}
+  canvas {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    background: white;
+  }
 
-button:hover {
-  background: #005fd1;
-}
+  /* Bottom Controls Sheet */
+  .controls-sheet {
+    background: var(--surface);
+    padding: 16px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom)); /* Safe area for iPhone */
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .input-group {
+    display: flex;
+    gap: 10px;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 2px solid #eee;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input[type="text"]:focus { border-color: var(--primary); }
+
+  /* Buttons */
+  .btn-row {
+    display: flex;
+    gap: 10px;
+  }
+
+  button {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.1s, background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  button:active { transform: scale(0.97); }
+  
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  
+  .btn-secondary { background: #f0f0f0; color: #333; }
+  
+  /* Hidden file input */
+  #upload { display: none; }
+
+  /* Loading Overlay */
+  .loader {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: #666;
+    font-weight: 600;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .loader.active { opacity: 1; }
+
 </style>
 </head>
 <body>
 
-<div class="container">
-  <h2>MIC MAHALL VISIT- Kaithang</h2>
+<header>
+  <h1>MIC MAHALL VISIT - Kaithang</h1>
+</header>
 
-  <canvas id="canvas" width="2275" height="2560"></canvas>
+<div class="canvas-container">
+  <div class="loader" id="loader">Loading Resources...</div>
+  <canvas id="canvas"></canvas>
+</div>
 
-  <div class="controls">
-    <input type="file" id="upload" accept="image/*">
-    <input type="text" id="nameInput" placeholder="Type your name">
-    <button onclick="downloadImage()">Download Image</button>
+<div class="controls-sheet">
+  <input type="text" id="nameInput" placeholder="Enter Name">
+  
+  <div class="btn-row">
+    <button class="btn-secondary" onclick="document.getElementById('upload').click()">
+      &#128247; Upload Photo
+    </button>
+    <button class="btn-primary" onclick="downloadImage()">
+      &#128190; Save Image
+    </button>
   </div>
 </div>
 
-<script>
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+<input type="file" id="upload" accept="image/*">
 
-/* ===== TEXT SETTINGS (EDIT HERE ONLY) ===== */
+<script>
+/* ====== CONFIGURATION ====== */
+const CANVAS_WIDTH = 2275;
+const CANVAS_HEIGHT = 2560;
 const TEXT_HEIGHT_FROM_BOTTOM = 620;
 const FONT_SIZE = 100;
-const TEXT_COLOR = "#000000";
-/* ========================================== */
+const FONT_COLOR = "#000000";
+const FRAME_SRC = "frame.png"; // Ensure this file exists
+/* ============================ */
 
-let userImage = null;
-let frameImage = new Image();
-let scale = 1;
-let posX = 0;
-let posY = 0;
-let isDragging = false;
-let startX, startY;
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d", { alpha: false }); // Optimization
+const loader = document.getElementById("loader");
 
-/* Load Frame */
-frameImage.onload = () => drawCanvas();
-frameImage.src = "frame.png";
+// View State
+let view = {
+  scale: 1,
+  posX: 0,
+  posY: 0,
+  userImage: null,
+  frameImage: null,
+  frameLoaded: false
+};
 
-/* Draw Everything */
-function drawCanvas() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+// Interaction State
+let drag = { active: false, startX: 0, startY: 0, lastX: 0, lastY: 0 };
+let pinch = { active: false, startDist: 0, startScale: 0 };
+let animationFrameId = null;
 
+// Set logical canvas size
+canvas.width = CANVAS_WIDTH;
+canvas.height = CANVAS_HEIGHT;
+
+/* === RESOURCE LOADING === */
+function init() {
+  loader.classList.add('active');
+  const img = new Image();
+  img.onload = () => {
+    view.frameImage = img;
+    view.frameLoaded = true;
+    loader.classList.remove('active');
+    render(); // Initial draw
+  };
+  img.onerror = () => {
+    loader.innerText = "Error: frame.png missing";
+  };
+  img.src = FRAME_SRC;
+}
+
+document.getElementById('upload').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      view.userImage = img;
+      
+      // Auto-fit logic
+      const scaleX = CANVAS_WIDTH / img.width;
+      const scaleY = CANVAS_HEIGHT / img.height;
+      view.scale = Math.max(scaleX, scaleY); // Cover the canvas
+      view.posX = (CANVAS_WIDTH - img.width * view.scale) / 2;
+      view.posY = (CANVAS_HEIGHT - img.height * view.scale) / 2;
+      
+      render();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+/* === RENDERING === */
+function render() {
+  // Clear canvas
+  ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  
   // 1. Draw User Image
-  if (userImage) {
-    const imgWidth = userImage.width * scale;
-    const imgHeight = userImage.height * scale;
-    ctx.drawImage(userImage, posX, posY, imgWidth, imgHeight);
+  if (view.userImage) {
+    ctx.save();
+    // We simply draw at calculated pos/scale.
+    // For better quality, we could use smoothing flags
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(
+      view.userImage, 
+      view.posX, view.posY, 
+      view.userImage.width * view.scale, 
+      view.userImage.height * view.scale
+    );
+    ctx.restore();
+  } else {
+    // Placeholder
+    ctx.fillStyle = "#f2f2f2";
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    ctx.fillStyle = "#aaa";
+    ctx.font = "bold 80px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("Upload a Photo", CANVAS_WIDTH/2, CANVAS_HEIGHT/2);
   }
 
-  // 2. Draw Frame Overlay
-  ctx.drawImage(frameImage, 0, 0, canvas.width, canvas.height);
+  // 2. Draw Frame
+  if (view.frameLoaded) {
+    ctx.drawImage(view.frameImage, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  }
 
   // 3. Draw Text
   const name = document.getElementById("nameInput").value;
-  ctx.fillStyle = TEXT_COLOR;
-  ctx.textAlign = "center";
-  ctx.font = `600 ${FONT_SIZE}px 'Anek Malayalam'`;
-  ctx.fillText(name, canvas.width / 2, canvas.height - TEXT_HEIGHT_FROM_BOTTOM);
+  if (name) {
+    ctx.fillStyle = FONT_COLOR;
+    ctx.textAlign = "center";
+    ctx.font = `600 ${FONT_SIZE}px 'Anek Malayalam', sans-serif`;
+    ctx.fillText(name, CANVAS_WIDTH / 2, CANVAS_HEIGHT - TEXT_HEIGHT_FROM_BOTTOM);
+  }
 }
 
-/* Upload Image */
-document.getElementById("upload").addEventListener("change", function(e) {
-  const reader = new FileReader();
-  reader.onload = function(event) {
-    const img = new Image();
-    img.onload = function() {
-      userImage = img;
-      scale = canvas.width / img.width;
-      posX = 0;
-      posY = 0;
-      drawCanvas();
-    };
-    img.src = event.target.result;
+// Live text update
+document.getElementById("nameInput").addEventListener("input", render);
+
+/* === INTERACTION LOGIC (MOBILE & DESKTOP) === */
+
+// Helper: Get touch coordinates relative to canvas
+function getPointerPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  
+  // Handle Touch vs Mouse
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+  return {
+    x: (clientX - rect.left) * scaleX,
+    y: (clientY - rect.top) * scaleY
   };
-  reader.readAsDataURL(e.target.files[0]);
-});
-
-/* Text Live Update */
-document.getElementById("nameInput").addEventListener("input", drawCanvas);
-
-/* Drag Move */
-canvas.addEventListener("mousedown", startDrag);
-canvas.addEventListener("mousemove", drag);
-canvas.addEventListener("mouseup", endDrag);
-canvas.addEventListener("touchstart", startDrag);
-canvas.addEventListener("touchmove", drag);
-canvas.addEventListener("touchend", endDrag);
-
-function startDrag(e) {
-  isDragging = true;
-  const touch = e.touches ? e.touches[0] : e;
-  startX = touch.clientX - posX;
-  startY = touch.clientY - posY;
 }
 
-function drag(e) {
-  if (!isDragging) return;
+// Helper: Distance between two touches
+function getTouchDistance(e) {
+  const dx = e.touches[0].clientX - e.touches[1].clientX;
+  const dy = e.touches[0].clientY - e.touches[1].clientY;
+  // We need scale relative to screen, but logic remains same
+  const rect = canvas.getBoundingClientRect();
+  const avgScale = (canvas.width / rect.width + canvas.height / rect.height) / 2;
+  return Math.sqrt(dx*dx + dy*dy) * avgScale;
+}
+
+// --- EVENT HANDLERS -->
+
+// 1. START
+canvas.addEventListener("mousedown", startInteraction);
+canvas.addEventListener("touchstart", (e) => {
   e.preventDefault();
-  const touch = e.touches ? e.touches[0] : e;
-  posX = touch.clientX - startX;
-  posY = touch.clientY - startY;
-  drawCanvas();
+  if (e.touches.length === 1) {
+    startInteraction(e);
+  } else if (e.touches.length === 2) {
+    startPinch(e);
+  }
+}, { passive: false });
+
+function startInteraction(e) {
+  if (!view.userImage) return;
+  const pos = getPointerPos(e);
+  drag.active = true;
+  drag.startX = pos.x - view.posX;
+  drag.startY = pos.y - view.posY;
+  drag.lastX = pos.x;
+  drag.lastY = pos.y;
 }
 
-function endDrag() {
-  isDragging = false;
+function startPinch(e) {
+  if (!view.userImage) return;
+  drag.active = false; // Stop drag if pinch starts
+  pinch.active = true;
+  pinch.startDist = getTouchDistance(e);
+  pinch.startScale = view.scale;
+  
+  // Set start position to midpoint for smoother zoom anchor
+  const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+  const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+  const rect = canvas.getBoundingClientRect();
+  pinch.midX = (midX - rect.left) * (canvas.width / rect.width);
+  pinch.midY = (midY - rect.top) * (canvas.height / rect.height);
 }
 
-/* Pinch Zoom (Mouse Wheel & Touch Zoom Basic) */
-canvas.addEventListener("wheel", function(e) {
+// 2. MOVE
+canvas.addEventListener("mousemove", moveInteraction);
+canvas.addEventListener("touchmove", (e) => {
   e.preventDefault();
-  scale += e.deltaY * -0.001;
-  scale = Math.min(Math.max(0.5, scale), 5);
-  drawCanvas();
-});
+  if (e.touches.length === 1 && drag.active) {
+    moveInteraction(e);
+  } else if (e.touches.length === 2 && pinch.active) {
+    movePinch(e);
+  }
+}, { passive: false });
 
-/* Download */
+function moveInteraction(e) {
+  if (!drag.active) return;
+  const pos = getPointerPos(e);
+  
+  // Simple drag
+  view.posX = pos.x - drag.startX;
+  view.posY = pos.y - drag.startY;
+  
+  // Optimization: Throttle rendering using requestAnimationFrame
+  if (!animationFrameId) {
+    animationFrameId = requestAnimationFrame(() => {
+      render();
+      animationFrameId = null;
+    });
+  }
+}
+
+function movePinch(e) {
+  if (!pinch.active) return;
+
+  const currentDist = getTouchDistance(e);
+  const newScale = pinch.startScale * (currentDist / pinch.startDist);
+  
+  // Constrain scale (optional: 0.5x to 5x)
+  view.scale = Math.min(Math.max(0.5, newScale), 10);
+
+  // Calculate offset to zoom into midpoint
+  // New Position = Midpoint - (Midpoint - OldPosition) * ScaleRatio
+  // But simpler for pure pinch: recalculate posX based on scale difference around center
+  // To keep it simple and smooth, we just scale for now.
+  // For better UX: Zoom to fingers center:
+  const scaleRatio = view.scale / pinch.startScale;
+  view.posX = pinch.midX - (pinch.midX - view.posX) * scaleRatio;
+  view.posY = pinch.midY - (pinch.midY - view.posY) * scaleRatio;
+  pinch.startScale = view.scale; // Update for continuous delta
+
+  if (!animationFrameId) {
+    animationFrameId = requestAnimationFrame(() => {
+      render();
+      animationFrameId = null;
+    });
+  }
+}
+
+// 3. END
+canvas.addEventListener("mouseup", endInteraction);
+canvas.addEventListener("mouseleave", endInteraction);
+canvas.addEventListener("touchend", endInteraction);
+canvas.addEventListener("touchcancel", endInteraction);
+
+function endInteraction() {
+  drag.active = false;
+  pinch.active = false;
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+  render(); // Final high-quality render
+}
+
+// Mouse Wheel Zoom (Desktop)
+canvas.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  if(!view.userImage) return;
+
+  const pos = getPointerPos(e);
+  const delta = e.deltaY > 0 ? 0.9 : 1.1;
+  const newScale = view.scale * delta;
+
+  if (newScale < 0.5 || newScale > 10) return;
+
+  // Zoom towards mouse pointer
+  view.posX = pos.x - (pos.x - view.posX) * (newScale / view.scale);
+  view.posY = pos.y - (pos.y - view.posY) * (newScale / view.scale);
+  view.scale = newScale;
+
+  render();
+}, { passive: false });
+
+
+/* === DOWNLOAD === */
 function downloadImage() {
+  // Ensure text is updated
+  render();
   const name = document.getElementById("nameInput").value || "campaign";
   const link = document.createElement("a");
   link.download = name + ".png";
@@ -176,13 +446,9 @@ function downloadImage() {
   link.click();
 }
 
-drawCanvas();
+// Start
+init();
+
 </script>
-
 </body>
-
 </html>
-
-
-
-
