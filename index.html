@@ -71,32 +71,75 @@
     flex-direction: column;
     gap: 12px;
     flex-shrink: 0;
-    max-height: 45vh;
+    max-height: 50vh;
     overflow-y: auto;
   }
 
-  /* Section: Edit Panel */
+  /* Generic Slider Row (Used for Zoom) */
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f9f9f9;
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+  .slider-row label { font-size: 14px; font-weight: 600; color: #555; width: 50px; }
+
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 6px;
+    background: var(--slider-bg); border-radius: 3px; outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 20px; height: 20px;
+    background: var(--primary); border-radius: 50%; cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+
+  input[type="text"] {
+    width: 100%; padding: 12px 16px; border-radius: 12px;
+    border: 2px solid var(--border); font-size: 16px; outline: none;
+    transition: border-color 0.2s;
+  }
+  input[type="text"]:focus { border-color: var(--primary); }
+
+  .btn-row { display: flex; gap: 10px; }
+
+  button {
+    flex: 1; padding: 12px; border: none; border-radius: 12px;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    transition: transform 0.1s, background 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  button:active { transform: scale(0.97); }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-secondary { background: #f0f0f0; color: #333; }
+  
+  #upload { display: none; }
+
+  /* Section: Edit Panel (Now at Bottom) */
   .edit-panel {
     background: #f9f9f9;
     border-radius: 12px;
     padding: 12px;
     border: 1px solid var(--border);
+    margin-top: 4px; /* Small spacing from top elements */
   }
 
+  .action-btn-row { display: flex; gap: 10px; margin-bottom: 12px; }
+
   .auto-btn {
-    width: 100%;
-    padding: 10px;
+    flex: 2; padding: 10px;
     background: linear-gradient(135deg, #444, #666);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    margin-bottom: 10px;
-    transition: transform 0.1s;
+    color: white; border: none; border-radius: 8px;
+    font-weight: 600; font-size: 14px; cursor: pointer;
   }
-  .auto-btn:active { transform: scale(0.98); }
+  .reset-btn {
+    flex: 1; padding: 10px;
+    background: #e0e0e0; color: #555; border: none; border-radius: 8px;
+    font-weight: 600; font-size: 14px; cursor: pointer;
+  }
 
   .slider-grid {
     display: grid;
@@ -104,88 +147,17 @@
     gap: 15px;
   }
 
-  .slider-item {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  
+  .slider-item { display: flex; flex-direction: column; gap: 4px; }
   .slider-label {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    color: #555;
-    font-weight: 600;
+    display: flex; justify-content: space-between;
+    font-size: 12px; color: #555; font-weight: 600;
   }
-
-  input[type="range"] {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 100%;
-    height: 6px;
-    background: var(--slider-bg);
-    border-radius: 3px;
-    outline: none;
-  }
-
-  input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 18px;
-    height: 18px;
-    background: var(--primary);
-    border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-  }
-
-  input[type="text"] {
-    width: 100%;
-    padding: 12px 16px;
-    border-radius: 12px;
-    border: 2px solid var(--border);
-    font-size: 16px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  input[type="text"]:focus { border-color: var(--primary); }
-
-  .btn-row {
-    display: flex;
-    gap: 10px;
-  }
-
-  button {
-    flex: 1;
-    padding: 12px;
-    border: none;
-    border-radius: 12px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: transform 0.1s, background 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-  }
-
-  button:active { transform: scale(0.97); }
-  
-  .btn-primary { background: var(--primary); color: white; }
-  .btn-secondary { background: #f0f0f0; color: #333; }
-  
-  #upload { display: none; }
 
   .loader {
-    position: absolute;
-    top: 50%; left: 50%;
+    position: absolute; top: 50%; left: 50%;
     transform: translate(-50%, -50%);
-    color: #666;
-    font-weight: 600;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.3s;
+    color: #666; font-weight: 600; pointer-events: none;
+    opacity: 0; transition: opacity 0.3s;
   }
   .loader.active { opacity: 1; }
 </style>
@@ -203,36 +175,16 @@
 
 <div class="controls-sheet">
   
-  <!-- Edit Panel -->
-  <div class="edit-panel">
-    <button class="auto-btn" onclick="applyNightFix()">✨ Auto Night Fix</button>
-    
-    <div class="slider-grid">
-      <!-- Brightness -->
-      <div class="slider-item">
-        <div class="slider-label"><span>Brightness</span><span id="val-bri">100%</span></div>
-        <input type="range" id="slider-bri" min="50" max="200" value="100" oninput="updateFilters()">
-      </div>
-      <!-- Contrast -->
-      <div class="slider-item">
-        <div class="slider-label"><span>Contrast</span><span id="val-con">100%</span></div>
-        <input type="range" id="slider-con" min="50" max="200" value="100" oninput="updateFilters()">
-      </div>
-      <!-- Saturation -->
-      <div class="slider-item">
-        <div class="slider-label"><span>Color Depth</span><span id="val-sat">100%</span></div>
-        <input type="range" id="slider-sat" min="0" max="200" value="100" oninput="updateFilters()">
-      </div>
-      <!-- Warmth -->
-      <div class="slider-item">
-        <div class="slider-label"><span>Warmth</span><span id="val-warm">0</span></div>
-        <input type="range" id="slider-warm" min="-50" max="50" value="0" oninput="updateFilters()">
-      </div>
-    </div>
+  <!-- 1. Zoom Slider -->
+  <div class="slider-row">
+    <label>Zoom</label>
+    <input type="range" id="zoomSlider" min="0.5" max="5" step="0.05" value="1">
   </div>
 
+  <!-- 2. Name Input -->
   <input type="text" id="nameInput" placeholder="Enter Name">
-  
+
+  <!-- 3. Upload & Save Buttons -->
   <div class="btn-row">
     <button class="btn-secondary" onclick="document.getElementById('upload').click()">
       &#128247; Upload
@@ -241,6 +193,34 @@
       &#128190; Save
     </button>
   </div>
+
+  <!-- 4. Edit Panel -->
+  <div class="edit-panel">
+    <div class="action-btn-row">
+      <button class="auto-btn" onclick="applyNightFix()">✨ Auto Night Fix</button>
+      <button class="reset-btn" onclick="resetFilters()">↺ Reset</button>
+    </div>
+
+    <div class="slider-grid">
+      <div class="slider-item">
+        <div class="slider-label"><span>Brightness</span><span id="val-bri">100%</span></div>
+        <input type="range" id="slider-bri" min="50" max="200" value="100" oninput="updateFilters()">
+      </div>
+      <div class="slider-item">
+        <div class="slider-label"><span>Contrast</span><span id="val-con">100%</span></div>
+        <input type="range" id="slider-con" min="50" max="200" value="100" oninput="updateFilters()">
+      </div>
+      <div class="slider-item">
+        <div class="slider-label"><span>Color Depth</span><span id="val-sat">100%</span></div>
+        <input type="range" id="slider-sat" min="0" max="200" value="100" oninput="updateFilters()">
+      </div>
+      <div class="slider-item">
+        <div class="slider-label"><span>Warmth</span><span id="val-warm">0</span></div>
+        <input type="range" id="slider-warm" min="-50" max="50" value="0" oninput="updateFilters()">
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <input type="file" id="upload" accept="image/*">
@@ -258,6 +238,7 @@ const FRAME_SRC = "frame.png";
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d", { alpha: false });
 const loader = document.getElementById("loader");
+const zoomSlider = document.getElementById("zoomSlider");
 
 // State
 let view = {
@@ -281,28 +262,46 @@ function updateFilters() {
   view.filters.sat = document.getElementById('slider-sat').value;
   view.filters.warm = document.getElementById('slider-warm').value;
 
-  // Update Labels
   document.getElementById('val-bri').innerText = view.filters.bri + '%';
   document.getElementById('val-con').innerText = view.filters.con + '%';
   document.getElementById('val-sat').innerText = view.filters.sat + '%';
   
-  const warmVal = view.filters.warm;
-  let warmText = "0";
-  if(warmVal > 0) warmText = "+" + warmText;
-  if(warmVal < 0) warmText = "-" + Math.abs(warmVal);
-  document.getElementById('val-warm').innerText = warmText;
+  const warmVal = parseInt(view.filters.warm);
+  document.getElementById('val-warm').innerText = warmVal > 0 ? "+" + warmVal : warmVal;
 
   render();
 }
 
-function applyNightFix() {
-  // Set optimized values for night photos
-  document.getElementById('slider-bri').value = 140;    // Brighten
-  document.getElementById('slider-con').value = 115;    // Add depth back
-  document.getElementById('slider-sat').value = 130;    // Bring out colors
-  document.getElementById('slider-warm').value = 15;    // Slightly warm (street lights)
+function resetFilters() {
+  document.getElementById('slider-bri').value = 100;
+  document.getElementById('slider-con').value = 100;
+  document.getElementById('slider-sat').value = 100;
+  document.getElementById('slider-warm').value = 0;
   updateFilters();
 }
+
+function applyNightFix() {
+  document.getElementById('slider-bri').value = 140;    
+  document.getElementById('slider-con').value = 115;    
+  document.getElementById('slider-sat').value = 130;    
+  document.getElementById('slider-warm').value = 15;    
+  updateFilters();
+}
+
+/* === ZOOM SLIDER LOGIC === */
+zoomSlider.addEventListener('input', (e) => {
+  if (!view.userImage) return;
+  const oldScale = view.scale;
+  const newScale = parseFloat(e.target.value);
+  
+  const centerX = CANVAS_WIDTH / 2;
+  const centerY = CANVAS_HEIGHT / 2;
+  view.posX = centerX - (centerX - view.posX) * (newScale / oldScale);
+  view.posY = centerY - (centerY - view.posY) * (newScale / oldScale);
+  
+  view.scale = newScale;
+  render();
+});
 
 /* === RESOURCE LOADING === */
 function init() {
@@ -327,13 +326,7 @@ document.getElementById('upload').addEventListener('change', (e) => {
     const img = new Image();
     img.onload = () => {
       view.userImage = img;
-      
-      // Reset filters on new upload
-      document.getElementById('slider-bri').value = 100;
-      document.getElementById('slider-con').value = 100;
-      document.getElementById('slider-sat').value = 100;
-      document.getElementById('slider-warm').value = 0;
-      updateFilters(); // Updates state & labels
+      resetFilters(); // Reset on new image
 
       // Auto-fit
       const scaleX = CANVAS_WIDTH / img.width;
@@ -344,7 +337,7 @@ document.getElementById('upload').addEventListener('change', (e) => {
       view.posX = (CANVAS_WIDTH - img.width * initialScale) / 2;
       view.posY = (CANVAS_HEIGHT - img.height * initialScale) / 2;
       
-      document.getElementById('zoomSlider').value = Math.min(initialScale, 5);
+      zoomSlider.value = Math.min(initialScale, 5);
       render();
     };
     img.src = ev.target.result;
@@ -356,12 +349,9 @@ document.getElementById('upload').addEventListener('change', (e) => {
 function render() {
   ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   
-  // 1. Draw User Image with Filters
   if (view.userImage) {
     ctx.save();
     
-    // Apply CSS-like filters
-    // brightness, contrast, saturate are standard
     let filterStr = `brightness(${view.filters.bri}%) contrast(${view.filters.con}%) saturate(${view.filters.sat}%)`;
     ctx.filter = filterStr;
 
@@ -369,20 +359,16 @@ function render() {
     const h = view.userImage.height * view.scale;
     ctx.drawImage(view.userImage, view.posX, view.posY, w, h);
     
-    // Warmth Overlay (White Balance Simulation)
-    // We draw a solid color rect over the image with 'overlay' or 'color' blend
+    // Warmth Overlay
     if (view.filters.warm != 0) {
-      ctx.filter = 'none'; // reset filter for the overlay
-      ctx.globalCompositeOperation = 'overlay'; // or 'soft-light'
-      ctx.globalAlpha = Math.abs(view.filters.warm) / 100; // strength
-      
-      // Positive = Orange/Warm, Negative = Blue/Cool
+      ctx.filter = 'none'; 
+      ctx.globalCompositeOperation = 'overlay';
+      ctx.globalAlpha = Math.abs(view.filters.warm) / 100; 
       const color = view.filters.warm > 0 ? '#ff9900' : '#0066ff';
       ctx.fillStyle = color;
       ctx.fillRect(view.posX, view.posY, w, h);
     }
-
-    ctx.restore(); // Reset composite operation and filter
+    ctx.restore();
   } else {
     ctx.fillStyle = "#f2f2f2";
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -392,12 +378,10 @@ function render() {
     ctx.fillText("Upload a Photo", CANVAS_WIDTH/2, CANVAS_HEIGHT/2);
   }
 
-  // 2. Draw Frame (No filters applied to frame)
   if (view.frameLoaded) {
     ctx.drawImage(view.frameImage, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   }
 
-  // 3. Draw Text
   const name = document.getElementById("nameInput").value;
   if (name) {
     ctx.fillStyle = FONT_COLOR;
@@ -408,20 +392,6 @@ function render() {
 }
 
 document.getElementById("nameInput").addEventListener("input", render);
-
-/* === ZOOM SLIDER === */
-const zoomSlider = document.getElementById("zoomSlider") || { value: 1 }; // Fallback if removed in UI, but we keep it logic-wise
-// Note: If you want a visible zoom slider in UI, add it back. 
-// For now I kept the previous logic but added the filter sliders.
-// Let's reuse the logic: 
-
-// Since the previous zoom slider HTML was replaced by edit sliders, 
-// I will bind the mouse wheel to zoom as per previous request, 
-// or you can add the zoom slider HTML back if needed.
-// I'll add a small zoom control below for completeness.
-
-// Wait, I removed the zoom slider in the HTML replacement. I should add it back or users can't zoom easily.
-// Let's add a simple zoom row at the bottom of the edit panel.
 
 /* === DOWNLOAD === */
 function downloadImage() {
@@ -462,18 +432,15 @@ function moveDrag(e) {
 
 function endDrag() { isDragging = false; }
 
-// Mouse
 canvas.addEventListener("mousedown", startDrag);
 canvas.addEventListener("mousemove", moveDrag);
 canvas.addEventListener("mouseup", endDrag);
 canvas.addEventListener("mouseleave", endDrag);
 
-// Touch
 canvas.addEventListener("touchstart", (e) => { e.preventDefault(); startDrag(e); }, { passive: false });
 canvas.addEventListener("touchmove", (e) => { moveDrag(e); }, { passive: false });
 canvas.addEventListener("touchend", endDrag);
 
-// Wheel Zoom
 canvas.addEventListener("wheel", (e) => {
   e.preventDefault();
   if(!view.userImage) return;
@@ -484,12 +451,12 @@ canvas.addEventListener("wheel", (e) => {
   view.posX = pos.x - (pos.x - view.posX) * (newScale / view.scale);
   view.posY = pos.y - (pos.y - view.posY) * (newScale / view.scale);
   view.scale = newScale;
+  
+  zoomSlider.value = newScale; // Sync slider
   render();
 }, { passive: false });
 
-// Init
 init();
-
 </script>
 </body>
 </html>
